@@ -29,12 +29,13 @@ watch(
   () => settingsStore.settings.locale,
   (locale) => setLocale(locale),
 )
+// With discreet mode on, nothing outside the app's own screens names the training.
 watch(
-  () => settingsStore.settings.appName,
-  (name) => {
-    const title = name.trim() || 'Core Timer'
-    document.title = title
-    document.querySelector('meta[name="apple-mobile-web-app-title"]')?.setAttribute('content', title)
+  () => [settingsStore.settings.appName, settingsStore.settings.discreetMode, settingsStore.settings.locale] as const,
+  ([name, discreet]) => {
+    const appName = name.trim() || 'Core Timer'
+    document.title = discreet ? appName : `${appName} · ${t('app.trainingName')}`
+    document.querySelector('meta[name="apple-mobile-web-app-title"]')?.setAttribute('content', appName)
   },
   { immediate: true },
 )

@@ -41,3 +41,12 @@ router.beforeEach((to) => {
   if (!settings.onboardingDone && to.name !== 'onboarding') return { name: 'onboarding' }
   if (settings.onboardingDone && to.name === 'onboarding') return { name: 'today' }
 })
+
+// A lazy route chunk can fail to load (e.g. flaky network before the service
+// worker has precached it). Retry once with a full navigation.
+router.onError((err, to) => {
+  console.error('Navigation failed', err)
+  if (/dynamically imported module|Importing a module script failed/i.test(String(err))) {
+    window.location.assign(to.fullPath)
+  }
+})

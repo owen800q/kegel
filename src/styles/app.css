@@ -7,6 +7,50 @@ body,
   height: 100%;
 }
 
+/* WeUI's brand green on white is only 2.4:1, so solid brand surfaces with
+   white text use a darker shade derived from it (≥ 4.5:1), and brand-coloured
+   text uses it too in light mode. Defined on body, where WeUI defines its variables. */
+body {
+  --app-brand-solid: color-mix(in srgb, var(--weui-BRAND) 65%, black);
+  --app-brand-text: var(--app-brand-solid);
+  --app-warn-text: color-mix(in srgb, var(--weui-RED) 80%, black);
+}
+
+body[data-weui-theme='dark'] {
+  --app-brand-text: var(--weui-BRAND);
+  --app-warn-text: var(--weui-RED);
+}
+
+@media (prefers-color-scheme: dark) {
+  body:not([data-weui-theme='light']) {
+    --app-brand-text: var(--weui-BRAND);
+    --app-warn-text: var(--weui-RED);
+  }
+}
+
+/* WeUI's secondary text (FG-2) is below 4.5:1; use FG-1 for readable text. */
+.weui-cell__desc,
+.weui-cells__tips,
+.weui-cells__title,
+.weui-footer {
+  color: var(--weui-FG-1);
+}
+
+.weui-information-bar_tips-strong.app-bar {
+  background-color: color-mix(in srgb, var(--weui-ORANGE) 55%, black);
+  color: var(--weui-WHITE);
+}
+
+.weui-btn_primary,
+.weui-btn_primary:not(.weui-btn_disabled):visited {
+  background-color: var(--app-brand-solid);
+}
+
+.weui-tabbar__item.weui-bar__item_on .weui-tabbar__label,
+.weui-tabbar__item.weui-bar__item_on .tab-icon {
+  color: var(--app-brand-text);
+}
+
 body {
   margin: 0;
   background-color: var(--weui-BG-0);
@@ -62,7 +106,7 @@ body {
 
 .warn-text,
 .weui-cell.warn-text {
-  color: var(--weui-RED);
+  color: var(--app-warn-text);
 }
 
 .visually-hidden {
@@ -145,7 +189,7 @@ a.weui-cell {
   font-size: 12px;
   padding: 1px 6px;
   border-radius: 4px;
-  color: var(--weui-BRAND);
+  color: var(--app-brand-text);
   border: 1px solid currentColor;
 }
 
@@ -301,9 +345,6 @@ a.weui-cell {
   background-color: transparent;
 }
 
-.weui-tabbar__item.weui-bar__item_on .tab-icon {
-  color: var(--weui-BRAND);
-}
 
 /* Stepper */
 .stepper {
@@ -357,7 +398,7 @@ a.weui-cell {
 }
 
 .picker-action_primary {
-  color: var(--weui-BRAND);
+  color: var(--app-brand-text);
   font-weight: 600;
 }
 
@@ -465,7 +506,7 @@ a.weui-cell {
 .player__tip {
   text-align: center;
   margin: 0 0 16px;
-  color: var(--weui-FG-2);
+  color: var(--weui-FG-1);
   font-size: 13px;
 }
 
@@ -674,8 +715,8 @@ a.weui-cell {
 }
 
 .rating__option_on {
-  border-color: var(--weui-BRAND);
-  background-color: var(--weui-BRAND);
+  border-color: var(--app-brand-solid);
+  background-color: var(--app-brand-solid);
   color: var(--weui-WHITE);
   font-weight: 600;
 }
@@ -769,7 +810,7 @@ a.weui-cell {
 .heat__cell_l1 { background-color: color-mix(in srgb, var(--weui-BRAND) 25%, var(--weui-BG-1)); }
 .heat__cell_l2 { background-color: color-mix(in srgb, var(--weui-BRAND) 50%, var(--weui-BG-1)); }
 .heat__cell_l3 { background-color: color-mix(in srgb, var(--weui-BRAND) 75%, var(--weui-BG-1)); }
-.heat__cell_l4 { background-color: var(--weui-BRAND); color: var(--weui-WHITE); }
+.heat__cell_l4 { background-color: var(--app-brand-solid); color: var(--weui-WHITE); }
 
 /* Count badge so colour is not the only cue. */
 .heat__n {
