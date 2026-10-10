@@ -12,8 +12,9 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "icons": "node scripts/gen-icons.mjs",
-    "cf:dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "cf:dev": "wrangler dev --test-scheduled",
+    "deploy": "wrangler deploy",
+    "vapid": "node scripts/gen-vapid.mjs"
   },
   "dependencies": {
     "idb": "^8.0.4",

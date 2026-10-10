@@ -1,8 +1,9 @@
 # Core Timer: conventions
 
 Mobile-first PWA for guided pelvic floor training. Full brief: the requirements
-doc in the original task. Phase 1 only; **ask before starting Phase 2** (push,
-D1, sync) and **before adding any dependency** not already in `package.json`.
+doc in the original task. Phase 1 plus Phase 2 §4.1 (Web Push reminders) are
+built; **ask before starting encrypted sync (§4.2)** and **before adding any
+dependency** not already in `package.json`.
 
 ## Commands
 - `npm run dev`: Vite dev server
@@ -10,7 +11,8 @@ D1, sync) and **before adding any dependency** not already in `package.json`.
 - `npm test`: Vitest unit tests (`src/**/*.test.ts`)
 - `npm run test:e2e`: Playwright against `wrangler dev` (builds first). In the
   cloud container set `PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium`.
-- `npx wrangler dev`: serve `dist/` exactly as Workers will (headers, SPA fallback)
+- `npx wrangler dev`: serve `dist/` exactly as Workers will (headers, SPA fallback, `/api/*`)
+- `npm run vapid`: print a new VAPID key pair for push
 - `npm run icons`: regenerate PNG icons from the SVG in `scripts/gen-icons.mjs`
 
 ## Architecture
@@ -28,6 +30,25 @@ D1, sync) and **before adding any dependency** not already in `package.json`.
   `cues.ts` wraps vibration, Web Audio tones, on-device speech and wake lock.
 - `src/data/programs.ts`: built-in programs, in progression order. Names and
   descriptions live in i18n under `programs.<id>`.
+
+## Push reminders (Worker)
+- `worker/index.ts` handles only `/api/*` (`run_worker_first`); everything else
+  is static assets. Endpoints: `GET /api/push/config`, `POST|DELETE
+  /api/push/subscribe`, `POST /api/push/test`. Cron `*/5 * * * *` sends due
+  reminders (`worker/schedule.ts`: due for 15 min after the time, once per local day).
+- D1 (`DB`) stores only endpoint, keys, reminder times, time zone and
+  last-sent days. Never training data. The table is created by the Worker
+  (`CREATE TABLE IF NOT EXISTS`); the database is auto-provisioned by Wrangler.
+- `worker/webpush.ts` implements VAPID (RFC 8292) and aes128gcm (RFC 8291) on
+  Web Crypto. No push library. Endpoints are restricted to known push-service hosts.
+- Secrets: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`. Without them
+  `/api/push/config` reports `enabled: false` and the UI says so.
+- `public/push-sw.js` is imported into the Workbox SW. Notification text is
+  always neutral; it reads locale and app name from the app's IndexedDB
+  (and must never create that database itself).
+- e2e `push.spec.ts` runs the real Worker against a mock push service that
+  verifies VAPID and decrypts the payload; cron is triggered via
+  `/cdn-cgi/handler/scheduled`.
 
 ## UI rules
 - WeUI only (`weui` CSS). Use WeUI markup/classes; thin Vue wrappers live in
@@ -51,8 +72,8 @@ D1, sync) and **before adding any dependency** not already in `package.json`.
 - PIN lock is a privacy screen (salted SHA-256), not security.
 
 ## Deployment
-- Cloudflare Workers static assets (`wrangler.jsonc`, assets-only, SPA
-  fallback). Push to `main` deploys; other branches get preview URLs.
+- Cloudflare Workers (`wrangler.jsonc`): static assets with SPA fallback plus
+  the push Worker. Push to `main` deploys; other branches get preview URLs.
 - Headers live in `public/_headers`: strict CSP (no inline scripts or styles,
   so keep `assetsInlineLimit: 0` and never add inline `<script>`/`<style>` to
   `index.html`), `Referrer-Policy: no-referrer`, minimal `Permissions-Policy`,

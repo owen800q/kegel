@@ -38,6 +38,8 @@ export interface Settings {
   audio: AudioPref
   dailyTarget: number
   reminderTimes: string[]
+  /** Web Push reminders are on for this device. */
+  pushEnabled: boolean
   discreetMode: boolean
   appName: string
   pinHash?: string

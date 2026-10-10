@@ -61,10 +61,22 @@
     "advanced": "高級"
   },
   "programs": {
-    "beginner": { "name": "初級", "desc": "3 秒收緊 / 3 秒放鬆 × 10，3 組" },
-    "intermediate-1": { "name": "中級 I", "desc": "5 秒收緊 × 10，2 組，加快速收放" },
-    "intermediate-2": { "name": "中級 II", "desc": "8 秒收緊 × 8，2 組，加快速收放" },
-    "advanced": { "name": "高級", "desc": "10 秒收緊、混合組合，以放鬆呼吸作結" },
+    "beginner": {
+      "name": "初級",
+      "desc": "3 秒收緊 / 3 秒放鬆 × 10，3 組"
+    },
+    "intermediate-1": {
+      "name": "中級 I",
+      "desc": "5 秒收緊 × 10，2 組，加快速收放"
+    },
+    "intermediate-2": {
+      "name": "中級 II",
+      "desc": "8 秒收緊 × 8，2 組，加快速收放"
+    },
+    "advanced": {
+      "name": "高級",
+      "desc": "10 秒收緊、混合組合，以放鬆呼吸作結"
+    },
     "weeks": "第 {weeks} 週",
     "custom": "自訂"
   },
@@ -216,7 +228,7 @@
     "addReminder": "新增提醒時間",
     "removeReminder": "移除",
     "exportIcs": "匯出到日曆（.ics）",
-    "remindersTip": "App 開啟時會在「今日」顯示提醒。如要在 App 關閉時收到提醒，請將提醒匯出到手機日曆。",
+    "remindersTip": "App 開啟時會在「今日」顯示提醒。開啟推送提醒後，App 關閉時亦會收到通知；你亦可以將提醒匯出到手機日曆。",
     "icsTitleDiscreet": "Core 5 min",
     "icsTitle": "盆底肌訓練 5 分鐘",
     "privacy": "私隱",
@@ -246,7 +258,21 @@
     "deletedAll": "已刪除所有資料",
     "about": "關於與正確技巧",
     "version": "版本 {v}",
-    "privacyNote": "所有資料只儲存在這部裝置，不會上傳。"
+    "privacyNote": "所有資料只儲存在這部裝置，不會上傳。",
+    "push": "推送提醒",
+    "pushTip": "到了提醒時間，即使 App 已關閉也會收到通知。通知內容一律中性，不會提及訓練。伺服器只會儲存推送訂閱、提醒時間和時區。",
+    "pushIos": "iPhone／iPad 需要先在 Safari 按「分享」→「加至主畫面」，再從主畫面開啟 App，才可以使用推送提醒（iOS 16.4 或以上）。",
+    "pushUnsupported": "此瀏覽器不支援推送通知。",
+    "pushTest": "發送測試通知",
+    "pushTestSent": "已發送，請查看通知",
+    "pushOn": "已開啟推送提醒",
+    "pushOff": "已關閉推送提醒",
+    "pushError": {
+      "denied": "通知權限被拒絕，請在系統設定中允許通知",
+      "not-configured": "伺服器未設定推送功能",
+      "network": "未能連線，請稍後再試",
+      "failed": "推送設定失敗，請稍後再試"
+    }
   },
   "pin": {
     "enter": "輸入密碼",

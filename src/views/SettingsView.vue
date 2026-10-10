@@ -10,6 +10,7 @@ import { ImportError, parseImport } from '@/db/export'
 import { canVibrate, playCue, unlockAudio } from '@/lib/cues'
 import { buildIcs } from '@/lib/ics'
 import { hashPin, newSalt } from '@/lib/pin'
+import { disablePush, enablePush, PushError, pushSupport, sendTestPush } from '@/lib/push'
 import { downloadFile } from '@/lib/platform'
 import { storage } from '@/lib/storage'
 import { useProgramStore } from '@/stores/program'
@@ -97,6 +98,49 @@ function exportIcs() {
     title: s.value.discreetMode ? t('settings.icsTitleDiscreet') : t('settings.icsTitle'),
   })
   downloadFile('reminders.ics', ics, 'text/calendar')
+}
+
+// Push reminders
+const support = pushSupport()
+const pushBusy = ref(false)
+
+function pushErrorText(err: unknown) {
+  const code = err instanceof PushError ? err.code : 'failed'
+  return t(`settings.pushError.${code}`)
+}
+
+const pushEnabled = computed({
+  get: () => s.value.pushEnabled,
+  set: (on: boolean) => void togglePush(on),
+})
+
+async function togglePush(on: boolean) {
+  if (pushBusy.value) return
+  pushBusy.value = true
+  try {
+    if (on) {
+      await enablePush(sortedTimes.value)
+      await settingsStore.update({ pushEnabled: true })
+      ui.showToast(t('settings.pushOn'))
+    } else {
+      await disablePush()
+      await settingsStore.update({ pushEnabled: false })
+      ui.showToast(t('settings.pushOff'), 'none')
+    }
+  } catch (err) {
+    ui.showToast(pushErrorText(err), 'warn', 2600)
+  } finally {
+    pushBusy.value = false
+  }
+}
+
+async function testPush() {
+  try {
+    await sendTestPush()
+    ui.showToast(t('settings.pushTestSent'), 'none')
+  } catch (err) {
+    ui.showToast(pushErrorText(err), 'warn', 2600)
+  }
 }
 
 // Privacy
@@ -194,6 +238,8 @@ async function deleteAll() {
     warn: true,
   })
   if (!ok) return
+  // Remove this device's push subscription from the server too.
+  await disablePush().catch(() => {})
   await sessionStore.deleteAll()
   storage.clear()
   // Start over from onboarding with a clean in-memory state.
@@ -253,12 +299,23 @@ async function deleteAll() {
         <div class="weui-cell__bd">{{ t('settings.addReminder') }}</div>
         <div class="weui-cell__ft"></div>
       </button>
+      <WSwitchCell
+        v-model="pushEnabled"
+        :label="t('settings.push')"
+        :disabled="support !== 'supported' || pushBusy"
+        :hint="support === 'needs-install' ? t('settings.pushIos') : support === 'unsupported' ? t('settings.pushUnsupported') : undefined"
+      />
+      <button v-if="s.pushEnabled" type="button" class="weui-cell weui-cell_access btn-reset cell-btn" @click="testPush">
+        <div class="weui-cell__bd">{{ t('settings.pushTest') }}</div>
+        <div class="weui-cell__ft"></div>
+      </button>
       <button type="button" class="weui-cell weui-cell_access btn-reset cell-btn" :disabled="sortedTimes.length === 0" @click="exportIcs">
         <div class="weui-cell__bd">{{ t('settings.exportIcs') }}</div>
         <div class="weui-cell__ft"></div>
       </button>
     </div>
     <p class="weui-cells__tips">{{ t('settings.remindersTip') }}</p>
+    <p v-if="support === 'supported'" class="weui-cells__tips">{{ t('settings.pushTip') }}</p>
 
     <h2 class="weui-cells__title">{{ t('settings.privacy') }}</h2>
     <div class="weui-cells weui-cells_form">

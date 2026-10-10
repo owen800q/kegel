@@ -8,6 +8,7 @@ import PinPad from './components/PinPad.vue'
 import UiHost from './components/UiHost.vue'
 import { setLocale } from './i18n'
 import { verifyPin } from './lib/pin'
+import { disablePush, syncPushTimes } from './lib/push'
 import { applyTheme } from './lib/theme'
 import { useSettingsStore } from './stores/settings'
 import { useUiStore } from './stores/ui'
@@ -39,6 +40,32 @@ watch(
   },
   { immediate: true },
 )
+
+// Keep the server's copy of the reminder times in step with settings.
+let pushSyncTimer: ReturnType<typeof setTimeout> | undefined
+watch(
+  () => [...settingsStore.settings.reminderTimes].sort().join(),
+  () => {
+    if (!settingsStore.settings.pushEnabled) return
+    clearTimeout(pushSyncTimer)
+    pushSyncTimer = setTimeout(() => void syncPushTimes(settingsStore.settings.reminderTimes).catch(() => {}), 800)
+  },
+)
+
+// If permission was revoked or this is an imported backup from another device,
+// there is no subscription here: reflect that in settings.
+onMounted(async () => {
+  if (!settingsStore.settings.pushEnabled || !('serviceWorker' in navigator)) return
+  const reg = await navigator.serviceWorker.getRegistration()
+  const sub = await reg?.pushManager?.getSubscription()
+  if (!sub || !('Notification' in window) || Notification.permission !== 'granted') {
+    await disablePush().catch(() => {})
+    await settingsStore.update({ pushEnabled: false })
+  } else {
+    // Refresh times and time zone (it may have changed while travelling).
+    void syncPushTimes(settingsStore.settings.reminderTimes).catch(() => {})
+  }
+})
 
 // Optional PIN lock.
 const locked = ref(Boolean(settingsStore.settings.pinHash))

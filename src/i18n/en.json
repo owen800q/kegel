@@ -61,10 +61,22 @@
     "advanced": "Advanced"
   },
   "programs": {
-    "beginner": { "name": "Beginner", "desc": "3 s hold / 3 s relax × 10, 3 sets" },
-    "intermediate-1": { "name": "Intermediate I", "desc": "5 s holds × 10, 2 sets, plus quick flicks" },
-    "intermediate-2": { "name": "Intermediate II", "desc": "8 s holds × 8, 2 sets, plus quick flicks" },
-    "advanced": { "name": "Advanced", "desc": "10 s holds, mixed sets, relaxation finisher" },
+    "beginner": {
+      "name": "Beginner",
+      "desc": "3 s hold / 3 s relax × 10, 3 sets"
+    },
+    "intermediate-1": {
+      "name": "Intermediate I",
+      "desc": "5 s holds × 10, 2 sets, plus quick flicks"
+    },
+    "intermediate-2": {
+      "name": "Intermediate II",
+      "desc": "8 s holds × 8, 2 sets, plus quick flicks"
+    },
+    "advanced": {
+      "name": "Advanced",
+      "desc": "10 s holds, mixed sets, relaxation finisher"
+    },
     "weeks": "Weeks {weeks}",
     "custom": "Custom"
   },
@@ -216,7 +228,7 @@
     "addReminder": "Add a reminder time",
     "removeReminder": "Remove",
     "exportIcs": "Export to calendar (.ics)",
-    "remindersTip": "While the app is open, Today shows a nudge when a session is due. To be reminded while it's closed, export the reminders to your phone's calendar.",
+    "remindersTip": "While the app is open, Today shows a nudge when a session is due. Turn on push reminders to be notified while it's closed, or export the reminders to your phone's calendar.",
     "icsTitleDiscreet": "Core 5 min",
     "icsTitle": "Pelvic floor training, 5 min",
     "privacy": "Privacy",
@@ -246,7 +258,21 @@
     "deletedAll": "All data deleted",
     "about": "About & technique",
     "version": "Version {v}",
-    "privacyNote": "All data stays on this device. Nothing is uploaded."
+    "privacyNote": "All data stays on this device. Nothing is uploaded.",
+    "push": "Push reminders",
+    "pushTip": "Get a notification at each reminder time, even when the app is closed. Notification text is always neutral. The server stores only the push subscription, reminder times and time zone.",
+    "pushIos": "On iPhone or iPad, first tap Share → “Add to Home Screen” in Safari and open the app from the Home Screen to use push reminders (iOS 16.4 or later).",
+    "pushUnsupported": "This browser doesn't support push notifications.",
+    "pushTest": "Send a test notification",
+    "pushTestSent": "Sent. Check your notifications.",
+    "pushOn": "Push reminders on",
+    "pushOff": "Push reminders off",
+    "pushError": {
+      "denied": "Notifications are blocked. Allow them in your system settings.",
+      "not-configured": "Push isn't set up on the server yet",
+      "network": "Couldn't connect. Try again later.",
+      "failed": "Couldn't set up push. Try again later."
+    }
   },
   "pin": {
     "enter": "Enter PIN",

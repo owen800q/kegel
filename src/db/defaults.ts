@@ -11,6 +11,7 @@ export function defaultSettings(): Settings {
     audio: 'off',
     dailyTarget: 3,
     reminderTimes: ['08:00', '13:00', '21:00'],
+    pushEnabled: false,
     discreetMode: true,
     appName: DEFAULT_APP_NAME,
     currentProgramId: defaultProgramId,

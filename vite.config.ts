@@ -25,7 +25,7 @@ export default defineConfig({
       registerType: 'prompt',
       injectRegister: false,
       manifestFilename: 'manifest.webmanifest',
-      includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],
+      includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png', 'icons/badge-96.png'],
       manifest: {
         id: '/',
         name: 'Core Timer',
@@ -47,6 +47,10 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
         navigateFallback: '/index.html',
+        // The API must always hit the network.
+        navigateFallbackDenylist: [/^\/api\//],
+        // Push and notification-click handlers.
+        importScripts: ['/push-sw.js'],
         cleanupOutdatedCaches: true,
         // No runtime caching: the app never talks to other origins.
         runtimeCaching: [],
