@@ -5,6 +5,11 @@ import type { ExportPayload } from './export'
 import { DB_VERSION, runMigrations } from './migrations'
 import { DB_NAME, SETTINGS_KEY, type CoreTimerDB } from './schema'
 
+/** Strip Vue reactivity proxies, which IndexedDB cannot clone. */
+function plain<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T
+}
+
 let dbPromise: Promise<IDBPDatabase<CoreTimerDB>> | null = null
 
 export function getDb(): Promise<IDBPDatabase<CoreTimerDB>> {
@@ -29,7 +34,7 @@ export async function loadSettings(): Promise<Settings> {
 
 export async function saveSettings(settings: Settings): Promise<void> {
   const db = await getDb()
-  await db.put('settings', structuredClone(settings), SETTINGS_KEY)
+  await db.put('settings', plain(settings), SETTINGS_KEY)
 }
 
 export async function listSessions(): Promise<Session[]> {
@@ -39,7 +44,7 @@ export async function listSessions(): Promise<Session[]> {
 
 export async function putSession(session: Session): Promise<void> {
   const db = await getDb()
-  await db.put('sessions', structuredClone(session))
+  await db.put('sessions', plain(session))
 }
 
 export async function deleteSession(id: string): Promise<void> {
@@ -54,7 +59,7 @@ export async function listRoutines(): Promise<CustomRoutine[]> {
 
 export async function putRoutine(routine: CustomRoutine): Promise<void> {
   const db = await getDb()
-  await db.put('routines', structuredClone(routine))
+  await db.put('routines', plain(routine))
 }
 
 export async function deleteRoutine(id: string): Promise<void> {
@@ -83,9 +88,9 @@ export async function replaceAll(data: Pick<ExportPayload, 'sessions' | 'routine
   const settings = tx.objectStore('settings')
   await Promise.all([sessions.clear(), routines.clear(), settings.clear()])
   await Promise.all([
-    ...data.sessions.map((s) => sessions.put(s)),
-    ...data.routines.map((r) => routines.put(r)),
-    settings.put(data.settings, SETTINGS_KEY),
+    ...data.sessions.map((s) => sessions.put(plain(s))),
+    ...data.routines.map((r) => routines.put(plain(r))),
+    settings.put(plain(data.settings), SETTINGS_KEY),
   ])
   await tx.done
 }
