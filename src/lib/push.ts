@@ -57,6 +57,11 @@ function timeZone(): string {
 export async function enablePush(times: readonly string[]): Promise<void> {
   const permission = await Notification.requestPermission()
   if (permission !== 'granted') throw new PushError('denied')
+  await subscribeAndRegister(times)
+}
+
+/** Subscribe (reusing a valid existing subscription) and upsert it on the server. Needs permission already granted. */
+async function subscribeAndRegister(times: readonly string[]): Promise<void> {
   const config = (await (await api('/api/push/config', 'GET')).json()) as { enabled: boolean; publicKey: string | null }
   if (!config.enabled || !config.publicKey) throw new PushError('not-configured')
 
@@ -71,6 +76,29 @@ export async function enablePush(times: readonly string[]): Promise<void> {
   }
   sub ??= await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key })
   await api('/api/push/subscribe', 'POST', { subscription: sub.toJSON(), times, timeZone: timeZone() })
+}
+
+/**
+ * On app start with push enabled: make sure this device is subscribed and the
+ * server has the current times and time zone. Re-subscribes silently if the
+ * browser lost the subscription (e.g. restored backup, iOS dropping it).
+ * Never deletes anything: the only outcome that should turn the setting off
+ * is 'denied' (the user revoked notification permission).
+ */
+export async function restorePush(times: readonly string[]): Promise<'ok' | 'denied' | 'error'> {
+  if (pushSupport() !== 'supported') return 'error' // e.g. opened in a Safari tab: leave settings alone
+  try {
+    const reg = await navigator.serviceWorker.ready
+    const state = await reg.pushManager
+      .permissionState({ userVisibleOnly: true })
+      .catch(() => Notification.permission as PermissionState | 'default')
+    if (state === 'denied') return 'denied'
+    if (state !== 'granted') return 'error' // 'prompt' can be transient on iOS; don't act on it
+    await subscribeAndRegister(times)
+    return 'ok'
+  } catch {
+    return 'error'
+  }
 }
 
 /** Update the server copy of the reminder times (no-op if not subscribed). */

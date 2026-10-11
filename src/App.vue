@@ -7,7 +7,7 @@ import PinPad from './components/PinPad.vue'
 import UiHost from './components/UiHost.vue'
 import { setLocale } from './i18n'
 import { verifyPin } from './lib/pin'
-import { disablePush, syncPushTimes } from './lib/push'
+import { restorePush, syncPushTimes } from './lib/push'
 import { applyTheme } from './lib/theme'
 import { useSettingsStore } from './stores/settings'
 import { useUiStore } from './stores/ui'
@@ -52,19 +52,13 @@ watch(
   },
 )
 
-// If permission was revoked or this is an imported backup from another device,
-// there is no subscription here: reflect that in settings.
+// Make sure push still works on this device: re-subscribe silently if the
+// subscription was lost and refresh times/time zone. Only a revoked
+// permission turns the setting off; nothing is ever deleted on start-up.
 onMounted(async () => {
-  if (!settingsStore.settings.pushEnabled || !('serviceWorker' in navigator)) return
-  const reg = await navigator.serviceWorker.getRegistration()
-  const sub = await reg?.pushManager?.getSubscription()
-  if (!sub || !('Notification' in window) || Notification.permission !== 'granted') {
-    await disablePush().catch(() => {})
-    await settingsStore.update({ pushEnabled: false })
-  } else {
-    // Refresh times and time zone (it may have changed while travelling).
-    void syncPushTimes(settingsStore.settings.reminderTimes).catch(() => {})
-  }
+  if (!settingsStore.settings.pushEnabled) return
+  const result = await restorePush(settingsStore.settings.reminderTimes)
+  if (result === 'denied') await settingsStore.update({ pushEnabled: false })
 })
 
 // Optional PIN lock.
