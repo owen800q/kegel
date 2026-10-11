@@ -12,7 +12,7 @@ if (!process.env.TEST_VAPID_PUBLIC) {
   process.env.TEST_VAPID_PRIVATE = jwk.d!
 }
 
-// Runs against `wrangler dev` so the real asset config and headers (CSP etc.) apply.
+// Runs against `wrangler dev` (which builds first, see wrangler.jsonc) so the real asset config and headers (CSP etc.) apply.
 export default defineConfig({
   testDir: './e2e',
   timeout: 60_000,
@@ -29,7 +29,7 @@ export default defineConfig({
   },
   webServer: {
     command:
-      `npm run build && npx wrangler dev --port ${PORT} --test-scheduled --var PUSH_ALLOW_LOCALHOST:1 ` +
+      `npx wrangler dev --port ${PORT} --test-scheduled --var PUSH_ALLOW_LOCALHOST:1 ` +
       `--var VAPID_PUBLIC_KEY:${process.env.TEST_VAPID_PUBLIC} --var VAPID_PRIVATE_KEY:${process.env.TEST_VAPID_PRIVATE}`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,

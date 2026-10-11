@@ -9,7 +9,7 @@ dependency** not already in `package.json`.
 - `npm run dev`: Vite dev server
 - `npm run build`: typecheck (vue-tsc) + production build to `dist/`
 - `npm test`: Vitest unit tests (`src/**/*.test.ts`)
-- `npm run test:e2e`: Playwright against `wrangler dev` (builds first). In the
+- `npm run test:e2e`: Playwright against `wrangler dev` (which builds first via `build` in `wrangler.jsonc`). In the
   cloud container set `PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium`.
 - `npx wrangler dev`: serve `dist/` exactly as Workers will (headers, SPA fallback, `/api/*`)
 - `npm run vapid`: print a new VAPID key pair for push

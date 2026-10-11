@@ -3,6 +3,9 @@
   "name": "core-timer",
   "main": "worker/index.ts",
   "compatibility_date": "2026-10-01",
+  // Build the app before every deploy/dev, so Workers Builds works even
+  // without a build command set in the dashboard.
+  "build": { "command": "npm run build", "watch_dir": ["src", "public", "worker"] },
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
