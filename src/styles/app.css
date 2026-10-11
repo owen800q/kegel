@@ -402,6 +402,12 @@ a.weui-cell {
   font-weight: 600;
 }
 
+/* Use WeUI's own geometry: 56px rows, indicator at 112px, 112px fade masks
+   top and bottom, so the picker body is 112 + 56 + 112 = 280px. */
+.picker-open .weui-picker__bd {
+  height: 280px;
+}
+
 .picker-mask {
   pointer-events: none;
 }
@@ -412,7 +418,8 @@ a.weui-cell {
   z-index: 2;
   overflow-y: auto;
   scroll-snap-type: y mandatory;
-  padding: 92px 0;
+  /* Centres the selected row exactly on .weui-picker__indicator. */
+  padding: 112px 0;
   box-sizing: border-box;
   scrollbar-width: none;
 }

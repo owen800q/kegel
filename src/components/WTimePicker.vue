@@ -22,22 +22,25 @@ function confirm() {
 </script>
 
 <template>
-  <div @keydown.esc="emit('cancel')">
-    <div class="weui-mask" @click="emit('cancel')"></div>
-    <div class="weui-picker picker-open" role="dialog" aria-modal="true" :aria-label="title">
-      <div class="weui-picker__hd picker-hd">
-        <button type="button" class="weui-picker__action btn-reset picker-action" @click="emit('cancel')">
-          {{ t('common.cancel') }}
-        </button>
-        <strong class="picker-title">{{ title }}</strong>
-        <button type="button" class="weui-picker__action btn-reset picker-action picker-action_primary" @click="confirm">
-          {{ t('common.ok') }}
-        </button>
-      </div>
-      <div class="weui-picker__bd">
-        <PickerColumn v-model="hour" :options="hours" label="HH" />
-        <PickerColumn v-model="minute" :options="minutes" label="mm" />
+  <!-- Rendered on <body> so the tab bar and scroll container can't cover or clip it. -->
+  <Teleport to="body">
+    <div class="picker-layer" @keydown.esc="emit('cancel')">
+      <div class="weui-mask" @click="emit('cancel')"></div>
+      <div class="weui-picker picker-open" role="dialog" aria-modal="true" :aria-label="title">
+        <div class="weui-picker__hd picker-hd">
+          <button type="button" class="weui-picker__action btn-reset picker-action" @click="emit('cancel')">
+            {{ t('common.cancel') }}
+          </button>
+          <strong class="picker-title">{{ title }}</strong>
+          <button type="button" class="weui-picker__action btn-reset picker-action picker-action_primary" @click="confirm">
+            {{ t('common.ok') }}
+          </button>
+        </div>
+        <div class="weui-picker__bd">
+          <PickerColumn v-model="hour" :options="hours" label="HH" />
+          <PickerColumn v-model="minute" :options="minutes" label="mm" />
+        </div>
       </div>
     </div>
-  </div>
+  </Teleport>
 </template>
