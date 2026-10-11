@@ -272,7 +272,10 @@
       "not-configured": "伺服器未設定推送功能",
       "network": "未能連線，請稍後再試",
       "failed": "推送設定失敗，請稍後再試"
-    }
+    },
+    "checkUpdate": "檢查更新",
+    "updateAvailable": "有新版本",
+    "upToDate": "已是最新版本"
   },
   "pin": {
     "enter": "輸入密碼",

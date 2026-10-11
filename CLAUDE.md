@@ -83,3 +83,6 @@ dependency** not already in `package.json`.
   `/assets/*`.
 - Service worker: `vite-plugin-pwa` `generateSW` with `registerType: 'prompt'`
   so a waiting worker triggers the in-app "Update now" dialog (`App.vue`).
+  `stores/update.ts` checks for a new `sw.js` on start, when the app returns to
+  the foreground (installed iOS apps resume rather than relaunch), hourly, and
+  from Settings → 檢查更新, which also offers a dismissed update.

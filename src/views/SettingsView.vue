@@ -17,6 +17,7 @@ import { useProgramStore } from '@/stores/program'
 import { useSessionStore } from '@/stores/session'
 import { useSettingsStore } from '@/stores/settings'
 import { useUiStore } from '@/stores/ui'
+import { useUpdateStore } from '@/stores/update'
 import type { AudioPref, Locale, Settings, ThemePref } from '@/types'
 
 const { t, locale } = useI18n()
@@ -26,6 +27,22 @@ const program = useProgramStore()
 const ui = useUiStore()
 const s = computed(() => settingsStore.settings)
 const version = __APP_VERSION__
+const update = useUpdateStore()
+const checking = ref(false)
+
+async function onUpdateRow() {
+  if (update.available) {
+    await update.apply()
+    return
+  }
+  checking.value = true
+  try {
+    const found = await update.check()
+    if (!found) ui.showToast(t('settings.upToDate'), 'none')
+  } finally {
+    checking.value = false
+  }
+}
 
 function set<K extends keyof Settings>(key: K, value: Settings[K]) {
   void settingsStore.update({ [key]: value } as Partial<Settings>)
@@ -365,7 +382,17 @@ async function deleteAll() {
         <div class="weui-cell__ft"></div>
       </RouterLink>
     </div>
-    <p class="weui-footer version">{{ t('settings.version', { v: version }) }}</p>
+    <div class="weui-cells">
+      <button type="button" class="weui-cell weui-cell_access btn-reset cell-btn" :disabled="checking" @click="onUpdateRow">
+        <div class="weui-cell__bd">
+          {{ update.available ? t('settings.updateAvailable') : t('settings.checkUpdate') }}
+        </div>
+        <div class="weui-cell__ft">
+          <span v-if="update.available" class="tag">{{ t('today.updateNow') }}</span>
+          <span v-else>{{ t('settings.version', { v: version }) }}</span>
+        </div>
+      </button>
+    </div>
 
     <WTimePicker
       v-if="editingReminder !== null"

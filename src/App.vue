@@ -2,7 +2,6 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
-import { useRegisterSW } from 'virtual:pwa-register/vue'
 import AppTabbar from './components/AppTabbar.vue'
 import PinPad from './components/PinPad.vue'
 import UiHost from './components/UiHost.vue'
@@ -12,6 +11,7 @@ import { disablePush, syncPushTimes } from './lib/push'
 import { applyTheme } from './lib/theme'
 import { useSettingsStore } from './stores/settings'
 import { useUiStore } from './stores/ui'
+import { useUpdateStore } from './stores/update'
 
 /** Re-lock with the PIN after the app has been in the background this long. */
 const RELOCK_AFTER_MS = 60_000
@@ -96,27 +96,27 @@ function onVisibility() {
 onMounted(() => document.addEventListener('visibilitychange', onVisibility))
 onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisibility))
 
-// Service worker update prompt.
-const { needRefresh, offlineReady, updateServiceWorker } = useRegisterSW({
-  onRegisteredSW(_url, registration) {
-    if (registration) setInterval(() => void registration.update(), 60 * 60 * 1000)
+// Service worker update prompt (shown once per new version; Settings offers it afterwards).
+const update = useUpdateStore()
+watch(
+  () => update.detected,
+  async () => {
+    const choice = await ui.showDialog({
+      body: t('today.updateReady'),
+      buttons: [
+        { label: t('common.later'), value: 'later', kind: 'default' },
+        { label: t('today.updateNow'), value: 'update', kind: 'primary' },
+      ],
+    })
+    if (choice === 'update') await update.apply()
   },
-})
-watch(needRefresh, async (ready) => {
-  if (!ready) return
-  const choice = await ui.showDialog({
-    body: t('today.updateReady'),
-    buttons: [
-      { label: t('common.later'), value: 'later', kind: 'default' },
-      { label: t('today.updateNow'), value: 'update', kind: 'primary' },
-    ],
-  })
-  if (choice === 'update') await updateServiceWorker(true)
-  else needRefresh.value = false
-})
-watch(offlineReady, (ready) => {
-  if (ready) ui.showToast(t('today.offlineReady'), 'none')
-})
+)
+watch(
+  () => update.offlineReady,
+  (ready) => {
+    if (ready) ui.showToast(t('today.offlineReady'), 'none')
+  },
+)
 </script>
 
 <template>
