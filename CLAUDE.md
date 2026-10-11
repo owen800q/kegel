@@ -12,7 +12,7 @@ dependency** not already in `package.json`.
 - `npm run test:e2e`: Playwright against `wrangler dev` (which builds first via `build` in `wrangler.jsonc`). In the
   cloud container set `PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium`.
 - `npx wrangler dev`: serve `dist/` exactly as Workers will (headers, SPA fallback, `/api/*`)
-- `npm run vapid`: print a new VAPID key pair for push
+- `npm run vapid`: print a VAPID key pair (only if overriding the auto-generated one)
 - `npm run icons`: regenerate PNG icons from the SVG in `scripts/gen-icons.mjs`
 
 ## Architecture
@@ -37,12 +37,14 @@ dependency** not already in `package.json`.
   /api/push/subscribe`, `POST /api/push/test`. Cron `*/5 * * * *` sends due
   reminders (`worker/schedule.ts`: due for 15 min after the time, once per local day).
 - D1 (`DB`) stores only endpoint, keys, reminder times, time zone and
-  last-sent days. Never training data. The table is created by the Worker
+  last-sent days, plus the server's VAPID pair (`vapid_keys`). Never training data. The table is created by the Worker
   (`CREATE TABLE IF NOT EXISTS`); the database is auto-provisioned by Wrangler.
 - `worker/webpush.ts` implements VAPID (RFC 8292) and aes128gcm (RFC 8291) on
   Web Crypto. No push library. Endpoints are restricted to known push-service hosts.
-- Secrets: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`. Without them
-  `/api/push/config` reports `enabled: false` and the UI says so.
+- VAPID keys: generated once by the Worker and stored in D1 (`getVapid`), so
+  push needs no setup. Optional secrets `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`
+  override them. Never commit a private key; changing keys invalidates all
+  subscriptions.
 - `public/push-sw.js` is imported into the Workbox SW. Notification text is
   always neutral; it reads locale and app name from the app's IndexedDB
   (and must never create that database itself).

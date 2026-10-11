@@ -2,10 +2,11 @@
  * Core Timer Worker: serves the static app and a tiny Web Push reminder API.
  *
  * Privacy: the database holds only push subscriptions, reminder times and
- * the time zone needed to interpret them. Never training data.
+ * the time zone needed to interpret them, plus this server's own VAPID key
+ * pair. Never training data.
  */
 import { dueTimes, isValidHm, isValidTimeZone, localClock } from './schedule'
-import { b64urlDecode, sendPush, type PushSubscriptionKeys, type VapidKeys } from './webpush'
+import { b64urlDecode, generateVapidKeys, sendPush, type PushSubscriptionKeys, type VapidKeys } from './webpush'
 
 const MAX_TIMES = 10
 const MAX_BODY = 4096
@@ -14,6 +15,13 @@ const MAX_BODY = 4096
 // Chrome/Chromium endpoints vary (fcm.googleapis.com, jmt17.google.com, …).
 const PUSH_HOSTS = ['updates.push.services.mozilla.com']
 const PUSH_HOST_SUFFIXES = ['.googleapis.com', '.google.com', '.push.apple.com', '.notify.windows.com']
+
+const VAPID_SCHEMA = `CREATE TABLE IF NOT EXISTS vapid_keys (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  public_key TEXT NOT NULL,
+  private_key TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+)`
 
 const SCHEMA = `CREATE TABLE IF NOT EXISTS push_subscriptions (
   endpoint TEXT PRIMARY KEY,
@@ -38,7 +46,7 @@ interface Row {
 let schemaReady: Promise<unknown> | null = null
 function ensureSchema(db: D1Database) {
   // The D1 database is auto-provisioned on deploy, so the Worker creates its own table.
-  schemaReady ??= db.prepare(SCHEMA).run().catch((err) => {
+  schemaReady ??= Promise.all([db.prepare(SCHEMA).run(), db.prepare(VAPID_SCHEMA).run()]).catch((err) => {
     schemaReady = null
     throw err
   })
@@ -58,13 +66,42 @@ function json(data: unknown, status = 200): Response {
   })
 }
 
-function vapidFrom(env: Env): VapidKeys | null {
-  if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY) return null
-  return {
-    publicKey: env.VAPID_PUBLIC_KEY,
-    privateKey: env.VAPID_PRIVATE_KEY,
-    subject: env.VAPID_SUBJECT || 'mailto:admin@example.com',
+let vapidCache: Promise<VapidKeys> | null = null
+
+/**
+ * The server's VAPID key pair. Secrets win when set (keeps existing
+ * subscriptions valid); otherwise the Worker generates a pair once and keeps
+ * it in D1, so push works with no setup and the private key never leaves the
+ * database. Replacing the keys invalidates every existing subscription.
+ */
+function getVapid(env: Env): Promise<VapidKeys> {
+  const subject = env.VAPID_SUBJECT || 'mailto:admin@example.com'
+  if (env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY) {
+    return Promise.resolve({ publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY, subject })
   }
+  vapidCache ??= (async () => {
+    await ensureSchema(env.DB)
+    const select = () =>
+      env.DB.prepare('SELECT public_key, private_key FROM vapid_keys WHERE id = 1').first<{
+        public_key: string
+        private_key: string
+      }>()
+    let row = await select()
+    if (!row) {
+      const keys = await generateVapidKeys()
+      // INSERT OR IGNORE: if two isolates race, both end up reading the same winner.
+      await env.DB.prepare('INSERT OR IGNORE INTO vapid_keys (id, public_key, private_key, created_at) VALUES (1, ?1, ?2, ?3)')
+        .bind(keys.publicKey, keys.privateKey, Date.now())
+        .run()
+      row = await select()
+      if (!row) throw new Error('Could not store VAPID keys')
+    }
+    return { publicKey: row.public_key, privateKey: row.private_key, subject }
+  })().catch((err) => {
+    vapidCache = null
+    throw err
+  })
+  return vapidCache
 }
 
 export function isAllowedEndpoint(endpoint: unknown, allowLocalhost = false): endpoint is string {
@@ -102,13 +139,12 @@ async function readJson(req: Request): Promise<Record<string, unknown> | null> {
 }
 
 async function handleApi(req: Request, env: Env, url: URL): Promise<Response> {
-  const vapid = vapidFrom(env)
+  const vapid = await getVapid(env)
   const allowLocal = env.PUSH_ALLOW_LOCALHOST === '1'
 
   if (url.pathname === '/api/push/config' && req.method === 'GET') {
-    return json({ enabled: Boolean(vapid), publicKey: vapid?.publicKey ?? null })
+    return json({ enabled: true, publicKey: vapid.publicKey })
   }
-  if (!vapid) return json({ error: 'push-not-configured' }, 503)
 
   if (url.pathname === '/api/push/subscribe' && req.method === 'POST') {
     const body = await readJson(req)
@@ -173,9 +209,7 @@ function deleteRow(db: D1Database, endpoint: string) {
 
 /** Send every reminder that is due. Exported for tests. */
 export async function sendDueReminders(env: Env, now: number, fetcher?: typeof fetch): Promise<number> {
-  const vapid = vapidFrom(env)
-  if (!vapid) return 0
-  await ensureSchema(env.DB)
+  const vapid = await getVapid(env)
   const { results } = await env.DB.prepare('SELECT * FROM push_subscriptions').all<Row>()
   let sent = 0
   const jobs = results.map(async (row) => {

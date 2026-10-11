@@ -22,8 +22,10 @@ let server: Server
 let received: Received[] = []
 let port = 0
 let pushStatus = 201
+let serverKey = ''
 
-test.beforeAll(async () => {
+test.beforeAll(async ({ request }) => {
+  serverKey = (await (await request.get('/api/push/config')).json()).publicKey
   server = createServer((req, res) => {
     const chunks: Buffer[] = []
     req.on('data', (c) => chunks.push(c))
@@ -71,7 +73,7 @@ async function decrypt(body: Uint8Array, ua: CryptoKeyPair, auth: Uint8Array) {
 async function verifyVapid(header: string | undefined, audience: string) {
   const m = /^vapid t=([^.]+)\.([^.]+)\.([^,]+), k=(.+)$/.exec(header ?? '')
   expect(m, 'VAPID Authorization header').not.toBeNull()
-  expect(m![4]).toBe(process.env.TEST_VAPID_PUBLIC)
+  expect(m![4]).toBe(serverKey)
   const claims = JSON.parse(Buffer.from(m![2], 'base64url').toString())
   expect(claims.aud).toBe(audience)
   expect(claims.exp * 1000).toBeGreaterThan(Date.now())
@@ -85,10 +87,15 @@ function utcHm(offsetMin = 0) {
   return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`
 }
 
-test('config exposes the VAPID public key', async ({ request }) => {
+test('generates a VAPID key pair once and keeps it', async ({ request }) => {
   const res = await request.get('/api/push/config')
-  expect(await res.json()).toEqual({ enabled: true, publicKey: process.env.TEST_VAPID_PUBLIC })
+  const body = await res.json()
+  expect(body.enabled).toBe(true)
+  expect(Buffer.from(body.publicKey, 'base64url')).toHaveLength(65)
   expect(res.headers()['cache-control']).toBe('no-store')
+  for (let i = 0; i < 3; i++) expect((await (await request.get('/api/push/config')).json()).publicKey).toBe(body.publicKey)
+  // The private key is never exposed.
+  expect(JSON.stringify(body)).not.toMatch(/private/i)
 })
 
 test('subscribe, test push, scheduled reminder once, unsubscribe', async ({ request }) => {

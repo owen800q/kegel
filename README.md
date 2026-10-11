@@ -19,23 +19,20 @@ npm run test:e2e     # Playwright smoke tests (against wrangler dev)
 
 See `CLAUDE.md` for conventions and architecture.
 
-## Push reminders: one-time setup
+## Push reminders
 
-The push API needs a VAPID key pair stored as Worker secrets. The D1 database
-is created automatically on the first deploy.
+No setup needed. On first use the Worker generates its own VAPID key pair and
+stores it in its D1 database (`vapid_keys`); the private key never appears in
+the repo or the dashboard. The D1 database itself is created automatically on
+the first deploy.
 
-```sh
-npm run vapid                               # prints VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY
-npx wrangler secret put VAPID_PUBLIC_KEY    # paste the public key
-npx wrangler secret put VAPID_PRIVATE_KEY   # paste the private key
-```
+Don't delete that database or the `vapid_keys` row: new keys invalidate every
+existing subscription, and users would have to turn push reminders on again.
 
-(Or add both under the Worker's *Settings → Variables and Secrets* in the
-Cloudflare dashboard.) `VAPID_SUBJECT` in `wrangler.jsonc` is the contact URL
-push services see. Keep the keys stable: changing them invalidates every
-existing subscription.
-
-For local development put the same keys in `.dev.vars` (git-ignored).
+Optional: to manage the keys yourself, run `npm run vapid` and set
+`VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` as Worker secrets. Secrets take
+precedence over the stored pair (switching also invalidates subscriptions).
+`VAPID_SUBJECT` in `wrangler.jsonc` is the contact URL push services see.
 
 This app is a training timer with general educational information. It isn't a
 medical device and doesn't provide medical advice.
