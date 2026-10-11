@@ -81,8 +81,9 @@ dependency** not already in `package.json`.
   `index.html`), `Referrer-Policy: no-referrer`, minimal `Permissions-Policy`,
   `no-cache` for `sw.js`, `manifest.webmanifest` and HTML, immutable for
   `/assets/*`.
-- Service worker: `vite-plugin-pwa` `generateSW` with `registerType: 'prompt'`
-  so a waiting worker triggers the in-app "Update now" dialog (`App.vue`).
-  `stores/update.ts` checks for a new `sw.js` on start, when the app returns to
-  the foreground (installed iOS apps resume rather than relaunch), hourly, and
-  from Settings → 檢查更新, which also offers a dismissed update.
+- Service worker: `vite-plugin-pwa` `generateSW` with `registerType: 'prompt'`,
+  but updates apply automatically with no prompt: `stores/update.ts` checks
+  for a new `sw.js` on start, when the app returns to the foreground
+  (installed iOS apps resume rather than relaunch) and hourly; `App.vue`
+  activates it and reloads, except on the `player`, `builder` and
+  `onboarding` routes, where it waits until the user leaves.

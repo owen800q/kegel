@@ -99,8 +99,6 @@
     "progressYes": "升級",
     "progressNo": "暫時不用",
     "iosHint": "在 Safari 按「分享」，再選「加至主畫面」，即可離線使用。",
-    "updateReady": "有新版本可用",
-    "updateNow": "立即更新",
     "offlineReady": "已可離線使用"
   },
   "train": {
@@ -272,10 +270,7 @@
       "not-configured": "伺服器未設定推送功能",
       "network": "未能連線，請稍後再試",
       "failed": "推送設定失敗，請稍後再試"
-    },
-    "checkUpdate": "檢查更新",
-    "updateAvailable": "有新版本",
-    "upToDate": "已是最新版本"
+    }
   },
   "pin": {
     "enter": "輸入密碼",

@@ -96,19 +96,15 @@ function onVisibility() {
 onMounted(() => document.addEventListener('visibilitychange', onVisibility))
 onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisibility))
 
-// Service worker update prompt (shown once per new version; Settings offers it afterwards).
+// Apply app updates automatically, but never reload in the middle of a
+// session, while building a routine or during onboarding: wait until the
+// user leaves that screen.
+const BUSY_ROUTES = new Set(['player', 'builder', 'onboarding'])
 const update = useUpdateStore()
 watch(
-  () => update.detected,
-  async () => {
-    const choice = await ui.showDialog({
-      body: t('today.updateReady'),
-      buttons: [
-        { label: t('common.later'), value: 'later', kind: 'default' },
-        { label: t('today.updateNow'), value: 'update', kind: 'primary' },
-      ],
-    })
-    if (choice === 'update') await update.apply()
+  () => [update.available, route.name] as const,
+  ([available, name]) => {
+    if (available && !BUSY_ROUTES.has(String(name))) void update.apply()
   },
 )
 watch(
